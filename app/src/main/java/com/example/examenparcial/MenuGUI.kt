@@ -1,20 +1,15 @@
 package com.example.examenparcial
 
 import android.content.Context
-import android.nfc.Tag
-import android.util.Log
-import androidx.compose.foundation.ExperimentalFoundationApi
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -34,12 +29,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import java.io.BufferedReader
+import java.io.File
+import java.io.FileInputStream
 
 @Composable
 fun MenuGUI(plants: List<Plant>) {
     val context = LocalContext.current
     val tabList = listOf("My Garden", "Plant list")
     var tabIndex by remember { mutableStateOf(0) }
+
+    val filename = "mygarden.json"
+    if (File(filename).exists() == false)
+    {
+        val fileContents = "empty"
+        context.openFileOutput(filename, Context.MODE_PRIVATE).use {
+            it.write(fileContents.toByteArray())
+        }
+    }
+
 
     Column {
         // Encabezado
@@ -68,33 +78,58 @@ fun MenuGUI(plants: List<Plant>) {
 
         // Contenido de las pestañas
         when (tabIndex) {
-            0 -> TabContent1(plants, context, tabIndex)
+            0 -> TabContent1(plants, context, onButtonClick = { tabIndex = 1 })
             1 -> TabContent2(plants, context)
         }
     }
 }
 
 @Composable
-fun TabContent1(plants: List<Plant>, context: Context, tabIndex: Int) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Your garden is empty",
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 25.sp,
-            modifier = Modifier
-                .padding(6.dp)
-        )
-        Button( onClick = { Log.d("DEBUG", "Waos") } )
-        {
-            Text(text = "Add plant")
+fun TabContent1(plants: List<Plant>, context: Context, onButtonClick: () -> Unit) {
+
+    var gardenDoesExist by remember { mutableStateOf(false) }
+
+    gardenDoesExist = File(context.dataDir, "mygarden.json").exists()
+
+    if (!gardenDoesExist) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Your garden is empty",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 25.sp,
+                modifier = Modifier
+                    .padding(6.dp)
+            )
+            Button(onClick = onButtonClick)
+            {
+                Text(text = "Add plant")
+            }
+        }
+    } else {
+        val gardenPlants = PlantsDatabase(
+            context = context,
+            jsonFileString = readGarden(context)
+        ).plants
+
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            items(gardenPlants.chunked(2)) { rowItems ->
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    for (gardenPlant in rowItems) {
+                        GardenPlantCard(plant = gardenPlant, context = context)
+                    }
+                }
+            }
         }
     }
-
-
 }
 
 @Composable
@@ -114,3 +149,5 @@ fun TabContent2(plants: List<Plant>, context: Context) {
         }
     }
 }
+
+

@@ -13,7 +13,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val plantsDatabase = PlantsDatabase(this)
+        val plantsDatabase = PlantsDatabase(
+            context = this,
+            jsonFileString = this
+                .resources
+                .openRawResource(R.raw.plants)
+                .bufferedReader()
+                .use { it.readText() })
 
         setContent {
             ExamenParcialTheme {

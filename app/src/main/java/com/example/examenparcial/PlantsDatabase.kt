@@ -5,7 +5,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.io.InputStream
 
-class PlantsDatabase(context : Context) {
+class PlantsDatabase(context : Context, jsonFileString: String) {
 
     val inputStream: InputStream = context.resources.openRawResource(R.raw.plants)
     val jsonFileString = inputStream.bufferedReader().use { it.readText() }
